@@ -8,6 +8,8 @@ public class Korkusanlar : MonoBehaviour
     public float radius = 4f;
     public float forceStrength = 400f;
     public float forceDuration = 3f;
+    public ThirdPersonCamera cameraScript; 
+
 
     [System.NonSerialized]
     internal bool FIRE = false;
@@ -24,6 +26,7 @@ public class Korkusanlar : MonoBehaviour
         {
             FIRE = false;
             ApplyForceToPlayers(center);
+            cameraScript.SetBirdsEyeMode(true);
         }
 
         if (activeForces.Count > 0)
