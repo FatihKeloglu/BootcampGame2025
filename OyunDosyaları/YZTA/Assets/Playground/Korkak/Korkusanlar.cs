@@ -1,6 +1,6 @@
 using UnityEngine;
-using UnityEditor;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 
 [ExecuteInEditMode]
 public class Korkusanlar : MonoBehaviour
@@ -8,14 +8,15 @@ public class Korkusanlar : MonoBehaviour
     public float radius = 4f;
     public float forceStrength = 400f;
     public float forceDuration = 3f;
-    public ThirdPersonCamera cameraScript; 
-
-
+    public ThirdPersonCamera _camera;
+    public float silenceBeforeExplosion = 2f;
+    private float countdown = -1f;
     [System.NonSerialized]
     internal bool FIRE = false;
 
     private Dictionary<Rigidbody, Vector3> activeForces = new();
     private float forceTimer = 0f;
+
 
     void Update()
     {
@@ -24,10 +25,23 @@ public class Korkusanlar : MonoBehaviour
 
         if (FIRE)
         {
+            countdown = 0f;
+            _camera.SetBirdsEyeMode(true, gameObject);
             FIRE = false;
-            ApplyForceToPlayers(center);
-            cameraScript.SetBirdsEyeMode(true);
         }
+
+        if (countdown != -1)
+        {
+            countdown += Time.deltaTime;
+            if (countdown > silenceBeforeExplosion)
+            {
+                ApplyForceToPlayers(center);
+                countdown = -1;
+                Debug.Log("Boom");
+                GetComponent<MeshRenderer>().enabled = false;
+            }
+        }
+
 
         if (activeForces.Count > 0)
         {
@@ -87,20 +101,3 @@ public class Korkusanlar : MonoBehaviour
         }
     }
 }
-
-#if UNITY_EDITOR
-[CustomEditor(typeof(Korkusanlar))]
-public class KorkusanlarEditor : Editor
-{
-    public override void OnInspectorGUI()
-    {
-        DrawDefaultInspector();
-
-        Korkusanlar korkusan = (Korkusanlar)target;
-        if (GUILayout.Button("FIRE"))
-        {
-            korkusan.FIRE = true;
-        }
-    }
-}
-#endif

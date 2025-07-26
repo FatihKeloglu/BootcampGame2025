@@ -13,11 +13,13 @@ public class ThirdPersonCamera : MonoBehaviour
     public float birdsEyePitch = 90f;
     public float birdsEyeYaw = 0f;
 
-    public float transitionSpeed = 5f; // Geçiş hızı
+    public float transitionSpeed = 5f;
 
     private float yaw = 0f;
     private float pitch = 10f;
+    public float floatingHeight = 12f;
 
+    private GameObject objectToHover = null;
     private Vector2 lookInput = Vector2.zero;
     private PlayerInput playerInput;
     private InputAction rightClickAction;
@@ -66,7 +68,7 @@ public class ThirdPersonCamera : MonoBehaviour
     {
         if (birdsEyeActive)
         {
-            SetBirdsEyeMode(false);
+            SetBirdsEyeMode(false, objectToHover);
         }
     }
 
@@ -76,6 +78,34 @@ public class ThirdPersonCamera : MonoBehaviour
         {
             yaw = birdsEyeYaw;
             pitch = birdsEyePitch;
+            Vector2 mousePos = Mouse.current.position.ReadValue();
+            Ray ray = Camera.main.ScreenPointToRay(mousePos);
+            Debug.DrawRay(ray.origin, ray.direction * 100f, Color.red);
+
+            RaycastHit[] hits = Physics.RaycastAll(ray, 100f);
+            int groundHitCount = 0;
+            Vector3 lastGroundPoint = Vector3.zero;
+
+            foreach (var hit in hits)
+            {
+                if (hit.collider.CompareTag("ground"))
+                {
+                    groundHitCount++;
+                    Debug.Log($"Ray hit ground #{groundHitCount} at: {hit.point}");
+                    lastGroundPoint = hit.point;
+                    if (groundHitCount == 2)
+                    {
+                        objectToHover.transform.position = Vector3.up * floatingHeight + hit.point;
+                        break;
+                    }
+                }
+            }
+
+            // If only one ground hit, fallback to first
+            if (groundHitCount == 1)
+            {
+                objectToHover.transform.position = Vector3.up * floatingHeight + lastGroundPoint;
+            }
         }
         else
         {
@@ -108,16 +138,19 @@ public class ThirdPersonCamera : MonoBehaviour
         transform.rotation = Quaternion.Slerp(transform.rotation, currentTargetRotation, Time.deltaTime * transitionSpeed);
     }
 
-    public void SetBirdsEyeMode(bool active)
+    public void SetBirdsEyeMode(bool active, GameObject _object = null)
     {
+        objectToHover = _object;
         birdsEyeActive = active;
-        if (active)
+        if (active && objectToHover != null)
         {
-            // Geçiş başında istersen ekstra işlemler
+            objectToHover.transform.position = transform.position + Vector3.up * 100;
+            objectToHover.GetComponent<MeshRenderer>().enabled = true;
         }
         else
         {
             lookInput = Vector2.zero;
+            objectToHover.GetComponent<Rigidbody>().useGravity = true;
         }
     }
 }
