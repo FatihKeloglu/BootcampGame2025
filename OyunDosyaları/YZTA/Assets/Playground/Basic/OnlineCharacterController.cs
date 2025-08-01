@@ -10,6 +10,8 @@ public class OnlineCharacterController : MonoBehaviour
     public float jumpForce = 5f;
     public float rotationSpeed = 720f;
 
+    public int playerNo;
+
     private Rigidbody rb;
     private PlayerInput playerInput;
     public Transform cameraTransform;
@@ -53,6 +55,22 @@ public class OnlineCharacterController : MonoBehaviour
     void OnRunPerformed(InputAction.CallbackContext context) => runPressed = true;
     void OnRunCanceled(InputAction.CallbackContext context) => runPressed = false;
     void OnMove(InputAction.CallbackContext context) => moveInput = context.ReadValue<Vector2>();
+
+
+    void Update()
+    {
+        if (cameraTransform == null)
+        {
+            // Set cameraTransform to the (playerNo - 1)th object with "player" tag
+            var players = GameObject.FindGameObjectsWithTag("Player");
+            if (players.Length > 0 && playerNo - 1 < players.Length && playerNo - 1 >= 0)
+                cameraTransform = players[playerNo - 1].transform;
+            else if (players.Length > 0)
+                cameraTransform = players[0].transform;
+            else
+                cameraTransform = null;
+        }
+    }
 
     void FixedUpdate()
     {

@@ -1,8 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 
-[ExecuteInEditMode]
 public class Korkusanlar : MonoBehaviour
 {
     public float radius = 4f;

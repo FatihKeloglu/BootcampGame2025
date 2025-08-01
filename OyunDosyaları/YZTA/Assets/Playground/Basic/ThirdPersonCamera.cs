@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 
 public class ThirdPersonCamera : MonoBehaviour
 {
+    public int playerNo;
     public Transform target;
     public Vector3 offset = new Vector3(0, 3, -5);
     public float rotationSpeed = 0.1f;
@@ -21,7 +22,7 @@ public class ThirdPersonCamera : MonoBehaviour
 
     private GameObject objectToHover = null;
     private Vector2 lookInput = Vector2.zero;
-    private PlayerInput playerInput;
+    public PlayerInput playerInput;
     private InputAction rightClickAction;
 
     private bool birdsEyeActive = false;
@@ -31,10 +32,19 @@ public class ThirdPersonCamera : MonoBehaviour
 
     void Awake()
     {
-        playerInput = Object.FindFirstObjectByType<PlayerInput>();
-        if (playerInput == null)
-            Debug.LogError("PlayerInput not found in scene");
-
+        #if UNITY_MULTIPLAYER_CENTER
+            // Unity Multiplayer Center: Host is always playerNo = 1, others get their host number (playerIndex + 1)
+            if (playerInput != null)
+            {
+                playerNo = playerInput.isHost ? 1 : playerInput.playerIndex + 1;
+            }
+            else
+            {
+                playerNo = 1;
+            }
+        #else
+            playerNo = playerInput != null ? playerInput.playerIndex + 1 : 1;
+        #endif
         rightClickAction = new InputAction(type: InputActionType.Button, binding: "<Mouse>/rightButton");
         rightClickAction.performed += ctx => OnRightClick();
     }
@@ -74,6 +84,29 @@ public class ThirdPersonCamera : MonoBehaviour
 
     void Update()
     {
+        {
+            var playerInputs = Object.FindObjectsByType<PlayerInput>(FindObjectsSortMode.None);
+            if (playerInputs.Length > 0 && playerNo - 1 < playerInputs.Length)
+                playerInput = playerInputs[playerNo - 1];
+            else
+                playerInput = null;
+        }
+        if (playerInput == null)
+            Debug.LogError("PlayerInput not found in scene");
+
+        {
+            // Set target to the (playerNo - 1)th object with "player" tag
+            var players = GameObject.FindGameObjectsWithTag("Player");
+            if (players.Length > 0 && playerNo - 1 < players.Length && playerNo - 1 >= 0)
+                target = players[playerNo - 1].transform;
+            else if (players.Length > 0)
+                target = players[0].transform;
+            else
+                target = null;
+        }
+        if (target == null)
+        Debug.LogError("target not found in scene");
+
         if (birdsEyeActive)
         {
             yaw = birdsEyeYaw;
